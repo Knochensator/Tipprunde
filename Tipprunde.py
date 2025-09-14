@@ -36,7 +36,7 @@ players = [
 ]
 
 # --- Universal password ---
-UNIVERSAL_PASSWORD = "borussia"
+UNIVERSAL_PASSWORD = "Sternenfeld"
 
 # --- Login ---
 if "authenticated" not in st.session_state:
