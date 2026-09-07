@@ -15,12 +15,14 @@ APP_TITLE = "Family Tipp Game"
 DB_PATH = os.getenv("TIPPGAME_DB", "tippgame.db")
 TZ = ZoneInfo(os.getenv("TIPPGAME_TIMEZONE", "Europe/Berlin"))
 INITIAL_JACKPOT_CENTS = 800
+NEXT_GAME_JACKPOT_CENTS = 2400
 
 # Edit these defaults before the first deployment, or use the Admin page after launch.
 DEFAULT_SETTINGS = {
     "team_name": "YOUR TEAM",
     # OpenLigaDB shortcuts. Examples: bl1 (1. Bundesliga), bl2, bl3, dfb.
-    "leagues": "bl1",
+    "leagues": "bl1,dfb",
+    "family_pin": "1234",
     # OpenLigaDB season: 2026 means 2026/27.
     "season": "2026",
     "admin_pin": "9999",
@@ -105,6 +107,11 @@ def init_db():
     )
     for key, value in DEFAULT_SETTINGS.items():
         db.execute("INSERT OR IGNORE INTO settings(key,value) VALUES (?,?)", (key, value))
+    # One-time migration: set the requested jackpot for the next game.
+    marker = db.execute("SELECT value FROM settings WHERE key='jackpot_v2_initialized'").fetchone()
+    if marker is None:
+        db.execute("UPDATE jackpot SET cents=? WHERE id=1", (NEXT_GAME_JACKPOT_CENTS,))
+        db.execute("INSERT OR REPLACE INTO settings(key,value) VALUES ('jackpot_v2_initialized','1')")
     for name, pin in DEFAULT_USERS:
         db.execute(
             "INSERT OR IGNORE INTO users(name,pin_hash) VALUES (?,?)",
@@ -139,8 +146,9 @@ def users():
 def authenticate(name: str, pin: str):
     db = get_db()
     row = db.execute("SELECT * FROM users WHERE name=? AND active=1", (name,)).fetchone()
+    shared_pin = db.execute("SELECT value FROM settings WHERE key='family_pin'").fetchone()
     db.close()
-    if row and row["pin_hash"] == hash_pin(pin):
+    if row and shared_pin and hash_pin(pin) == hash_pin(shared_pin["value"]):
         return dict(row)
     return None
 
@@ -338,7 +346,7 @@ with st.sidebar:
     if "user" not in st.session_state:
         st.session_state["user"] = None
     selected = st.selectbox("Name", names if names else ["No users configured"])
-    pin = st.text_input("PIN", type="password")
+    pin = st.text_input("Family PIN", type="password", help="The same PIN is used by everyone.")
     if st.button("Log in", use_container_width=True):
         user = authenticate(selected, pin)
         if user:
@@ -457,16 +465,18 @@ else:
 # -----------------------------
 if is_admin:
     st.header("Admin")
-    st.caption("Admin changes are stored in the database. The family does not need accounts.")
+    st.caption("Admin changes are stored in the database. The family only needs one shared PIN; there are no individual accounts.")
     with st.form("settings"):
         team = st.text_input("Team name", value=setting("team_name"))
         leagues = st.text_input("OpenLigaDB league shortcuts (comma-separated)", value=setting("leagues"))
         season = st.text_input("Season", value=setting("season"), help="2026 means the 2026/27 season.")
+        family_pin = st.text_input("Family PIN", value=setting("family_pin"), type="password")
         new_admin_pin = st.text_input("Admin PIN", value=setting("admin_pin"), type="password")
         if st.form_submit_button("Save settings"):
             set_setting("team_name", team.strip())
             set_setting("leagues", leagues.strip())
             set_setting("season", season.strip())
+            set_setting("family_pin", family_pin)
             set_setting("admin_pin", new_admin_pin)
             st.success("Settings saved. Click Update games/results.")
             st.rerun()
@@ -484,14 +494,13 @@ if is_admin:
             db.commit(); db.close(); st.rerun()
     with st.form("new_user"):
         name = st.text_input("New name")
-        user_pin = st.text_input("New PIN", type="password")
         if st.form_submit_button("Add family member"):
-            if not name.strip() or not user_pin:
-                st.error("Enter both a name and a PIN.")
+            if not name.strip():
+                st.error("Enter a name.")
             else:
                 try:
                     db = get_db()
-                    db.execute("INSERT INTO users(name,pin_hash) VALUES (?,?)", (name.strip(), hash_pin(user_pin)))
+                    db.execute("INSERT INTO users(name,pin_hash) VALUES (?,?)", (name.strip(), hash_pin(setting("family_pin"))))
                     db.commit(); db.close()
                     st.success("Added.")
                     st.rerun()
