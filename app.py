@@ -19,23 +19,18 @@ NEXT_GAME_JACKPOT_CENTS = 2400
 
 # Edit these defaults before the first deployment, or use the Admin page after launch.
 DEFAULT_SETTINGS = {
-    "team_name": "YOUR TEAM",
+    "team_name": "Elche",
     # OpenLigaDB shortcuts. Examples: bl1 (1. Bundesliga), bl2, bl3, dfb.
-    "leagues": "bl1,dfb",
+    "leagues": "es1",
     "family_pin": "1234",
     # OpenLigaDB season: 2026 means 2026/27.
     "season": "2026",
     "admin_pin": "9999",
 }
 DEFAULT_USERS = [
-    ("Celina", "1234"),
-    ("Gerlinde", "1234"),
-    ("Oma", "1234"),
-    ("Mechthild", "1234"),
-    ("Tobias", "1234"),
-    ("Sebastian", "1234"),
-    ("Ansgar", "1234"),
-    ("John", "1234"),
+    ("Person 1", "1234"),
+    ("Person 2", "2345"),
+    ("Person 3", "3456"),
 ]
 
 
