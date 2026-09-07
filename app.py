@@ -28,9 +28,14 @@ DEFAULT_SETTINGS = {
     "admin_pin": "9999",
 }
 DEFAULT_USERS = [
-    ("Person 1", "1234"),
-    ("Person 2", "2345"),
-    ("Person 3", "3456"),
+    ("Celina", "1234"),
+    ("Gerlinde", "1234"),
+    ("Oma", "1234"),
+    ("Mechthild", "1234"),
+    ("Tobias", "1234"),
+    ("Sebastian", "1234"),
+    ("Ansgar", "1234"),
+    ("John", "1234"),
 ]
 
 
