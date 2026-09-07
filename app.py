@@ -397,25 +397,33 @@ else:
                 })
             st.dataframe(pd.DataFrame(data), hide_index=True, use_container_width=True)
 
+            st.markdown("**Your prediction**")
             if st.session_state.get("user"):
                 me = st.session_state["user"]
                 existing = preds.get(me["name"])
                 c1, c2, c3 = st.columns([1, 1, 1])
                 with c1:
-                    hs = st.number_input("Home", min_value=0, max_value=30,
-                                         value=int(existing["home_score"]) if existing else 0,
-                                         key=f"h_{m['id']}")
+                    hs = st.number_input(
+                        "Home goals", min_value=0, max_value=30,
+                        value=int(existing["home_score"]) if existing else 0,
+                        key=f"h_{m['id']}"
+                    )
                 with c2:
-                    aas = st.number_input("Away", min_value=0, max_value=30,
-                                          value=int(existing["away_score"]) if existing else 0,
-                                          key=f"a_{m['id']}")
+                    aas = st.number_input(
+                        "Away goals", min_value=0, max_value=30,
+                        value=int(existing["away_score"]) if existing else 0,
+                        key=f"a_{m['id']}"
+                    )
                 with c3:
                     st.write("")
                     st.write("")
-                    if st.button("Save prediction", key=f"save_{m['id']}"):
+                    button_text = "Change prediction" if existing else "Save prediction"
+                    if st.button(button_text, key=f"save_{m['id']}", type="primary"):
                         save_prediction(m["id"], me["id"], int(hs), int(aas))
-                        st.success("Prediction saved.")
+                        st.success(f"Prediction saved: {hs}:{aas}")
                         st.rerun()
+            else:
+                st.info("To enter your prediction, select your name and enter your PIN in the **Login** section in the sidebar. After logging in, the prediction fields will appear here.")
             st.divider()
 
     with tab_finished:
